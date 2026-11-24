@@ -1,6 +1,10 @@
-"""Exports PhotoShield_Report.docx to PDF with Microsoft Word, then puts the full-resolution
-figures back into the PDF (Word downsamples pictures on export) and prints the page count."""
+"""Exports a report .docx to PDF with Microsoft Word, then puts the full-resolution figures
+back into the PDF (Word downsamples pictures on export) and prints the page count.
+
+Usage: python docs/report/export_pdf.py [path/to/report.docx]   (default: the public report)
+"""
 import os
+import sys
 
 import pymupdf
 import win32com.client
@@ -8,9 +12,10 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.dirname(HERE)
-src = os.path.join(HERE, "PhotoShield_Report.docx")
-tmp = os.path.join(HERE, "PhotoShield_Report.word.pdf")
-dst = os.path.join(HERE, "PhotoShield_Report.pdf")
+src = os.path.abspath(sys.argv[1]) if len(sys.argv) > 1 else os.path.join(HERE, "PhotoShield_Report.docx")
+base = os.path.splitext(src)[0]
+tmp = base + ".word.pdf"
+dst = base + ".pdf"
 FIGURES = [
     os.path.join(DOCS, "architecture.png"),
     os.path.join(DOCS, "results", "screenshot-result-crop.png"),

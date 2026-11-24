@@ -1,5 +1,13 @@
-"""Builds the project report (PhotoShield_Report.docx). Run: python docs/report/build_report.py"""
+"""Builds the project report.
+
+  python docs/report/build_report.py               public version  -> docs/report/PhotoShield_Report.docx
+  python docs/report/build_report.py --submission  with roll numbers -> notes/submission/PhotoShield_Report.docx
+
+Roll numbers are read from notes/team.json, which is git-ignored so they never reach the public repository.
+"""
+import json
 import os
+import sys
 
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
@@ -10,10 +18,15 @@ from docx.shared import Cm, Pt, RGBColor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DOCS = os.path.dirname(HERE)
-OUT = os.path.join(HERE, "PhotoShield_Report.docx")
+ROOT = os.path.dirname(DOCS)
+PUBLIC_OUT = os.path.join(HERE, "PhotoShield_Report.docx")
+SUBMISSION_OUT = os.path.join(ROOT, "notes", "submission", "PhotoShield_Report.docx")
+ROLL_NUMBERS = os.path.join(ROOT, "notes", "team.json")
 FONT = "Cambria"
 BLACK = RGBColor(0x1A, 0x1A, 0x1A)
 THEME_ATTRS = ("w:asciiTheme", "w:hAnsiTheme", "w:eastAsiaTheme", "w:cstheme")
+TEAM = ["Gavisht Singh", "Aarpit Kumar Roul", "Nishant Bimra"]
+INSTRUCTOR = "Dr. Varinder Pal Singh"
 
 
 def set_font(style, size, bold=False, italic=False):
@@ -138,7 +151,7 @@ def page_number(paragraph):
     run.font.size = Pt(9)
 
 
-def build():
+def build(out, rolls=None):
     doc = Document()
     keep_pictures_sharp(doc)
     sec = doc.sections[0]
@@ -167,12 +180,37 @@ def build():
     r.bold = True
     r.font.size = Pt(15)
     for line, after in (("Project report, UCS531 Cloud Computing", 0),
-                        ("Thapar Institute of Engineering and Technology, Patiala", 6),
-                        ("Gavisht Singh, Aarpit, Nishant", 0),
-                        ("November 2026", 10)):
+                        ("Thapar Institute of Engineering and Technology, Patiala", 8)):
         p = doc.add_paragraph(line)
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         p.paragraph_format.space_after = Pt(after)
+
+    # Submitted by / submitted to, side by side without visible borders.
+    t = doc.add_table(rows=1, cols=2)
+    t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    border(t._tbl.tblPr, "w:tblBorders",
+           {"top": 0, "left": 0, "bottom": 0, "right": 0, "insideH": 0, "insideV": 0})
+    left, right = t.rows[0].cells
+    left.width, right.width = Cm(9.5), Cm(6.9)
+    blocks = (
+        (left, "Submitted by", [f"{name} ({rolls[name]})" if rolls else name for name in TEAM]),
+        (right, "Submitted to", [INSTRUCTOR]),
+    )
+    for cell, heading, lines in blocks:
+        p = cell.paragraphs[0]
+        p.paragraph_format.space_after = Pt(1)
+        p.add_run(heading).bold = True
+        for line in lines:
+            q = cell.add_paragraph(line)
+            q.paragraph_format.space_after = Pt(0)
+    right.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    for q in right.paragraphs[1:]:
+        q.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+    p = doc.add_paragraph("November 2026")
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_before = Pt(8)
+    p.paragraph_format.space_after = Pt(6)
     p = doc.add_paragraph()
     p.paragraph_format.space_after = Pt(8)
     border(p._p.get_or_add_pPr(), "w:pBdr", {"bottom": 6})
@@ -349,9 +387,14 @@ def build():
         r = p.add_run(f"[{i}]  {ref}")
         r.font.size = Pt(9.5)
 
-    doc.save(OUT)
-    print("Saved", OUT)
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    doc.save(out)
+    print("Saved", out)
 
 
 if __name__ == "__main__":
-    build()
+    if "--submission" in sys.argv:
+        with open(ROLL_NUMBERS, encoding="utf-8") as fh:
+            build(SUBMISSION_OUT, json.load(fh))
+    else:
+        build(PUBLIC_OUT)
