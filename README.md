@@ -61,11 +61,23 @@ docs/               architecture diagram, demo guide, code walkthrough
 
 ## Running it
 
-Requirements: Terraform 1.9+, AWS CLI configured with an IAM user (not root), PowerShell.
+Requirements: an AWS account, the AWS CLI configured with an IAM user's keys (`aws configure`, not the
+root account), and Terraform 1.9+, both on PATH. Everything is created in your own account and billed to it.
+
+On Windows:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\up.ps1     # build everything (~14 min), opens the site
+powershell -ExecutionPolicy Bypass -File scripts\up.ps1     # build everything (~15 min), opens the site
 powershell -ExecutionPolicy Bypass -File scripts\down.ps1   # delete everything (asks for confirmation)
+```
+
+On any OS:
+
+```bash
+cd terraform
+terraform init
+terraform apply      # prints app_url; the site is ready a few minutes after apply finishes
+terraform destroy    # delete everything when done
 ```
 
 Running the stack costs about $2 per day; destroy it when not in use.

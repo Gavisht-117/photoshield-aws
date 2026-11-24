@@ -4,10 +4,7 @@
 $ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
-$tf   = 'E:\tools\terraform\terraform.exe'
-$env:TF_PLUGIN_CACHE_DIR = 'E:\tools\tf-plugin-cache'
-$env:TMP  = 'E:\tools\tmp'
-$env:TEMP = 'E:\tools\tmp'
+. (Join-Path $PSScriptRoot 'common.ps1')
 
 Push-Location (Join-Path $root 'terraform')
 try {
